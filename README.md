@@ -8,9 +8,9 @@ and ./player/src/pop3_proxy_serv.erl.
 
 <dl>
   <dt>./src/pop3lib.erl</dt>
-  <dd>Library which can be used when writing POP3 servers</dd>
+  <dd>Library which can be used to build POP3 servers</dd>
   <dt>./src/smtplib.erl</dt>
-  <dd>Library which can be used when writing SMTP servers</dd>
+  <dd>Library which can be used to build SMTP servers</dd>
   <dt>./src/mail_util.erl</dt>
   <dd>Common code used by the POP3 and SMTP libraries</dd>
   <dt>./src/maildrop_serv.erl</dt>
