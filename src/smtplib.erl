@@ -308,7 +308,7 @@ handle_line(_Socket, #smtplib_options{temp_dir = TempDir} = Options,
                             case string:prefix(Line, " ") of
                                 nomatch ->
                                     %% https://tools.ietf.org/html/rfc2822#section-2.2
-                                    case string:split(line, ":") of
+                                    case string:split(Line, ":") of
                                         [Name, Value] ->
                                             CanonicalName =
                                                 string:uppercase(string:trim(Name)),
@@ -386,11 +386,11 @@ apply_servlet(Command, #smtplib_options{servlets = Servlets},
 send(Socket, Status, Info) ->
   ?dbg_log({send, Status, Info}),
   if
-      Info == not_set ->
-          gen_tcp:send(Socket, [?i2b(Status), <<"\r\n">>]);
+%%      Info == not_set ->
+%%          gen_tcp:send(Socket, [?i2b(Status), <<"\r\n">>]);
       true ->
           gen_tcp:send(
-            Socket, [?i2b(Status), <<" ">>, info, <<"\r\n">>])
+            Socket, [?i2b(Status), <<" ">>, Info, <<"\r\n">>])
   end.
 
 send(Socket, Replies) ->
