@@ -162,194 +162,164 @@ read_lines(Socket, #smtplib_options{timeout = Timeout} = Options, Channel) ->
             ok
     end.
 
+handle_line(_Socket, _Options, #channel{mode = Mode}, Line)
+  when Mode /= data andalso Line == <<"\r\n">> ->
+    #response{};
 handle_line(_Socket, #smtplib_options{temp_dir = TempDir} = Options,
             #channel{mode = Mode,
                      authenticated = Authenticated,
-                     data = Data} = Channel0, Line) ->
-    if
-        Mode /= data andalso Line == <<"\r\n">> ->
-            #response{};
-        Mode /= data ->
-            [Command|Args] = string:lexemes(string:chomp(Line), " "),
-            case string:uppercase(Command) of
-                %% https://tools.ietf.org/html/rfc2821#section-4.1.1.1
-                <<"HELO">> ->
-                    case apply_servlet(helo, Options, Channel0, Args) of
-                        #response{
-                           channel = #channel{mode = helo} = Channel} = Response ->
-                            Response#response{
-                              channel = Channel#channel{data = reset_data(TempDir, Data)}};
-                        Response ->
-                            Response
-                    end;
-                %% https://tools.ietf.org/html/rfc2821#section-4.1.1.1
-                <<"EHLO">> ->
-                    case apply_servlet(ehlo, Options, Channel0, Args) of
-                        #response{
-                           channel = #channel{
-                                        mode = helo} = Channel} = Response ->
-                            Response#response{
-                              channel = Channel#channel{
-                                          data = reset_data(TempDir, Data)}};
-                        Response ->
-                            Response
-                    end;
-                %% https://tools.ietf.org/html/rfc4954
-                <<"AUTH">> ->
-                    if
-                        Mode /= helo orelse Authenticated ->
-                            #response{status = 503,
-                                      info = <<"bad command sequence">>};
-                        true ->
-                            apply_servlet(auth, Options, Channel0, Args)
-                    end;
-                _ when not Authenticated andalso Mode /= helo ->
-                    #response{status = 503,
-                              info = <<"authentication required">>};
-                %% https://tools.ietf.org/html/rfc2821#section-4.1.1.2
-                <<"MAIL">> ->
-                    if
-                        Mode /= helo ->
-                            #response{status = 503,
-                                      info = <<"bad command sequence">>};
-                        true ->
-                            case apply_servlet(mail, Options, Channel0, Args) of
-                                #response{
-                                   channel =
-                                       #channel{
-                                          mode = mail} = Channel} = Response ->
-                                    Response#response{
-                                      channel =
-                                          Channel#channel{
-                                            data = reset_data(TempDir, Data)}};
-                                Response ->
-                                    Response
-                            end
-                    end;
-                %% https://tools.ietf.org/html/rfc2821#section-4.1.1.3
-                <<"RCPT">> ->
-                    if
-                        Mode /= mail andalso Mode /= rcpt ->
-                            #response{status = 503,
-                                      info = <<"bad command sequence">>};
-                        true ->
-                            apply_servlet(rcpt, Options, Channel0, Args)
-                    end;
-                %% https://tools.ietf.org/html/rfc2821#section-4.1.1.4
-                <<"DATA">> ->
-                    if
-                        Mode /= rcpt ->
-                            #response{status = 503,
-                                      info = <<"bad command sequence">>};
-                        true ->
-                            #response{
-                               status = 354,
-                               info = <<"OK, Enter data, terminated with \\r\\n.\\r\\n">>,
-                               channel = 
-                                   Channel0#channel{
-                                     mode = data,
-                                     data = reset_data(TempDir, Data)}}
-                    end;
-                %% https://tools.ietf.org/html/rfc2821#section-4.1.1.5
-                <<"RSET">> ->
-                    case apply_servlet(rset, Options, Channel0, Args) of
-                        #response{
-                           channel = #channel{
-                                        mode = helo} = Channel} =  Response ->
-                            Response#response{
-                              channel = Channel#channel{
-                                          data = reset_data(TempDir, Data)}};
-                        Response ->
-                            Response
-                    end;
-                %% https://tools.ietf.org/html/rfc2821#section-4.1.1.6
-                <<"VRFY">> ->
-                    apply_servlet(vrfy, Options, Channel0, Args);
-                %% https://tools.ietf.org/html/rfc2821#section-4.1.1.7
-                <<"EXPN">> ->
-                    apply_servlet(expn, Options, Channel0, Args);
-                %% https://tools.ietf.org/html/rfc2821#section-4.1.1.8
-                <<"HELP">> ->
-                    apply_servlet(help, Options, Channel0, Args);
-                %% https://tools.ietf.org/html/rfc2821#section-4.1.1.9
-                <<"NOOP">> ->
-                    #response{};
-                %% https://tools.ietf.org/html/rfc2821#section-4.1.1.10
-                <<"QUIT">> ->
-                    apply_servlet(quit, Options, Channel0, Args);
-                _ ->
-                    apply_servlet(any, Options, Channel0, Line)
+                     data = Data} = Channel, Line)
+  when Mode /= data ->
+    [Command|Args] = string:lexemes(string:chomp(Line), " "),
+    case string:uppercase(Command) of
+        %% https://tools.ietf.org/html/rfc2821#section-4.1.1.1
+        <<"HELO">> ->
+            case apply_servlet(helo, Options, Channel, Args) of
+                #response{
+                   channel = #channel{mode = helo} = NewChannel} = Response ->
+                    Response#response{
+                      channel = NewChannel#channel{
+                                  data = reset_data(TempDir, Data)}};
+                Response ->
+                    Response
             end;
-        true ->
+        %% https://tools.ietf.org/html/rfc2821#section-4.1.1.1
+        <<"EHLO">> ->
+            case apply_servlet(ehlo, Options, Channel, Args) of
+                #response{
+                   channel = #channel{mode = helo} = NewChannel} = Response ->
+                    Response#response{
+                      channel = NewChannel#channel{
+                                  data = reset_data(TempDir, Data)}};
+                Response ->
+                    Response
+            end;
+        %% https://tools.ietf.org/html/rfc4954
+        <<"AUTH">> ->
             if
-                Line == <<".\r\n">> ->
-                    ?dbg_log({'DATA', Data}),
-                    case apply_servlet(data, Options, Channel0, Data)  of
-                        #response{
-                           channel = #channel{mode = helo} = Channel} = Response ->
-                            Response#response{
-                              channel = Channel#channel{
-                                          data = reset_data(TempDir, Data)}};
-                        Response ->
-                            Response
-                    end;
+                Mode /= helo orelse Authenticated ->
+                    #response{status = 503, info = <<"bad command sequence">>};
                 true ->
-                    case {Line, Data} of
-                        {<<"\r\n">>, #data{fd = Fd, size = Size}} ->
-                            ok = file:write(Fd, <<"\r\n">>),
-                            {data, Channel0#channel{
-                                     data = Data#data{
-                                              context = letter, size = Size + 2}}};
-                        {_, #data{context = Context,
-                                  headers = Headers,
-                                  fd = Fd,
-                                  size = Size}}
-                          when Context == headers ->
-                            case string:prefix(Line, " ") of
-                                nomatch ->
-                                    %% https://tools.ietf.org/html/rfc2822#section-2.2
-                                    case string:split(Line, ":") of
-                                        [Name, Value] ->
-                                            CanonicalName =
-                                                string:uppercase(string:trim(Name)),
-                                            CanonicalValue = string:trim(Value),
-                                            ok = file:write(Fd, Line),
-                                            {data,
-                                             Channel0#channel{
-                                               data = Data#data{
-                                                        headers =
-                                                            [{CanonicalName,
-                                                              CanonicalValue}, Headers],
-                                                        size = Size + size(Line)}}};
-                                        _ ->
-                                            %% FIXME: Support multiple part messages
-                                            %% ala https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
-                                            ?error_log({invalid_header, Line}),
-                                            ok = file:write(Fd, Line),
-                                            {data,
-                                             Channel0#channel{
-                                               data =
-                                                   Data#data{size = Size + size(Line)}}}
-                                    end;
-                                _ ->
-                                    %% https://tools.ietf.org/html/rfc2822#section-2.2.3
-                                    [{Name, Value}|RemainingHeaders] = Headers,
-                                    ok = file:write(Fd, Line),
-                                    {data,
-                                     Channel0#channel{
-                                       data = Data#data{
-                                                headers = [{Name, ?l2b([Value, Line])},
-                                                           RemainingHeaders],
-                                                size = Size + size(Line)}}}
-                            end;
-                        {_, #data{context = Context,
-                                  fd = Fd,
-                                  size = Size}} when Context == letter ->
+                    apply_servlet(auth, Options, Channel, Args)
+            end;
+        _ when not Authenticated andalso Mode /= helo ->
+            #response{status = 503, info = <<"authentication required">>};
+        %% https://tools.ietf.org/html/rfc2821#section-4.1.1.2
+        <<"MAIL">> when Mode /= helo ->
+            #response{status = 503, info = <<"bad command sequence">>};
+        <<"MAIL">> ->
+            case apply_servlet(mail, Options, Channel, Args) of
+                #response{
+                   channel = #channel{mode = mail} = NewChannel} = Response ->
+                    Response#response{
+                      channel = NewChannel#channel{
+                                  data = reset_data(TempDir, Data)}};
+                Response ->
+                    Response
+            end;
+        %% https://tools.ietf.org/html/rfc2821#section-4.1.1.3
+        <<"RCPT">> when Mode /= mail andalso Mode /= rcpt ->
+            #response{status = 503, info = <<"bad command sequence">>};
+        <<"RCPT">> ->
+            apply_servlet(rcpt, Options, Channel, Args);
+        %% https://tools.ietf.org/html/rfc2821#section-4.1.1.4
+        <<"DATA">> when Mode /= rcpt ->
+            #response{status = 503, info = <<"bad command sequence">>};
+        <<"DATA">> ->
+            #response{
+               status = 354,
+               info = <<"OK, Enter data, terminated with \\r\\n.\\r\\n">>,
+               channel = 
+                   Channel#channel{mode = data,
+                                    data = reset_data(TempDir, Data)}};
+        %% https://tools.ietf.org/html/rfc2821#section-4.1.1.5
+        <<"RSET">> ->
+            case apply_servlet(rset, Options, Channel, Args) of
+                #response{
+                   channel = #channel{mode = helo} = NewChannel} =  Response ->
+                    Response#response{
+                      channel = NewChannel#channel{
+                                  data = reset_data(TempDir, Data)}};
+                Response ->
+                    Response
+            end;
+        %% https://tools.ietf.org/html/rfc2821#section-4.1.1.6
+        <<"VRFY">> ->
+            apply_servlet(vrfy, Options, Channel, Args);
+        %% https://tools.ietf.org/html/rfc2821#section-4.1.1.7
+        <<"EXPN">> ->
+            apply_servlet(expn, Options, Channel, Args);
+        %% https://tools.ietf.org/html/rfc2821#section-4.1.1.8
+        <<"HELP">> ->
+            apply_servlet(help, Options, Channel, Args);
+        %% https://tools.ietf.org/html/rfc2821#section-4.1.1.9
+        <<"NOOP">> ->
+            #response{};
+        %% https://tools.ietf.org/html/rfc2821#section-4.1.1.10
+        <<"QUIT">> ->
+            apply_servlet(quit, Options, Channel, Args);
+        _ ->
+            apply_servlet(any, Options, Channel, Line)
+    end;
+handle_line(_Socket, #smtplib_options{temp_dir = TempDir} = Options,
+            #channel{mode = Mode,
+                     authenticated = Authenticated,
+                     data = Data} = Channel, Line) when Line == <<".\r\n">> ->
+    ?dbg_log({'DATA', Data}),
+    case apply_servlet(data, Options, Channel, Data)  of
+        #response{channel = #channel{mode = helo} = Channel} = Response ->
+            Response#response{channel = Channel#channel{
+                                          data = reset_data(TempDir, Data)}};
+        Response ->
+            Response
+    end;
+handle_line(_Socket, #smtplib_options{temp_dir = TempDir} = Options,
+            #channel{mode = Mode,
+                     authenticated = Authenticated,
+                     data = Data} = Channel, Line) ->
+    case {Line, Data} of
+        {<<"\r\n">>, #data{fd = Fd, size = Size}} ->
+            ok = file:write(Fd, <<"\r\n">>),
+            {data, Channel#channel{
+                     data = Data#data{context = letter, size = Size + 2}}};
+        {_, #data{context = Context, headers = Headers, fd = Fd, size = Size}}
+          when Context == headers ->
+            case string:prefix(Line, " ") of
+                nomatch ->
+                    %% https://tools.ietf.org/html/rfc2822#section-2.2
+                    case string:split(Line, ":") of
+                        [Name, Value] ->
+                            CanonicalName = string:uppercase(string:trim(Name)),
+                            CanonicalValue = string:trim(Value),
                             ok = file:write(Fd, Line),
-                            {data, Channel0#channel{
+                            {data,
+                             Channel#channel{
+                               data = Data#data{
+                                        headers = [{CanonicalName,
+                                                    CanonicalValue}, Headers],
+                                        size = Size + size(Line)}}};
+                        _ ->
+                            %% FIXME: Support multiple part messages
+                            %% ala https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
+                            ?error_log({invalid_header, Line}),
+                            ok = file:write(Fd, Line),
+                            {data, Channel#channel{
                                      data = Data#data{size = Size + size(Line)}}}
-                    end
-            end
+                    end;
+                _ ->
+                    %% https://tools.ietf.org/html/rfc2822#section-2.2.3
+                    [{Name, Value}|RemainingHeaders] = Headers,
+                    ok = file:write(Fd, Line),
+                    {data, Channel#channel{
+                             data = Data#data{
+                                      headers = [{Name, ?l2b([Value, Line])},
+                                                 RemainingHeaders],
+                                      size = Size + size(Line)}}}
+            end;
+        {_, #data{context = Context, fd = Fd, size = Size}}
+          when Context == letter ->
+            ok = file:write(Fd, Line),
+            {data, Channel#channel{data = Data#data{size = Size + size(Line)}}}
     end.
 
 reset_data(_TempDir, #data{size = 0} = Data) ->
