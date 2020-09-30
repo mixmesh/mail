@@ -23,8 +23,10 @@
         {action = continue :: break | continue,
          status = ok       :: ok | err,
          info = not_set    :: not_set | binary(),
-         body = not_set    :: not_set | {file, binary()} |
-                              {file, binary(), integer()} | [binary()],
+         body = not_set    :: not_set |
+                              {file, binary()} |
+                              {file, binary(), integer()} |
+                              [binary()],
          channel = not_set :: not_set | #channel{}}).
 
 -endif.

@@ -8,7 +8,7 @@
 
 -record(smtplib_options,
         {timeout                               :: integer(),
-         greeting                              :: binary(),
+         greeting                              :: binary() | not_set,
          authenticate                          :: yes | no,
          initial_servlet_state                 :: any(),
          servlets                              :: [#servlet{}],
@@ -23,7 +23,7 @@
          size = 0          :: integer()}).
 
 -record(channel,
-        {mode :: init | helo | mail | rcpt | data,
+        {mode :: init | helo | auth | mail | rcpt | data,
          authenticated :: boolean(),
          data = not_initialized :: not_initialized | #data{},
          servlet_state :: any()}).
@@ -32,7 +32,8 @@
         {action = continue :: break | continue,
          status = 250 :: integer(),
          info = <<"OK">> :: binary(),
-         replies = not_set ::  not_set | [{Status :: integer(), Info :: binary()}],
+         replies = not_set ::  not_set |
+                               [{Status :: integer(), Info :: binary()}],
          channel = not_set ::  not_set | #channel{}}).
 
 -endif.

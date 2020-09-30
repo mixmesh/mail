@@ -9,29 +9,27 @@
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("apptools/include/shorthand.hrl").
--include_lib("mail/include/maildrop.hrl").
+-include_lib("mail/include/maildrop_serv.hrl").
 
 -define(FILE_CHUNK_SIZE, 8192).
 
--record(state, {%% pid()
-                parent,
-                %% dirname()
-                spooler_dir,
-                %% tid()
-                index,
-                %% dets:tab_name()
-                file_index,
-                %% integer()
-                next_message_number,
-                %% pid() | none
-                locker = none}).
+-type message_number() :: integer().
 
--record(meta_info, {%% 0 (0 is reserved for meta info)
-                    message_number = 0,
-                    %% integer()
-                    next_message_number = 1}).
+-record(state, {parent :: pid(),
+                spooler_dir :: binary(),
+                index :: ets:tid(),
+                file_index :: dets:tab_name(),
+                next_message_number :: message_number(),
+                locker = none :: pid() | none}).
+
+-record(meta_info,
+        {%% 0 is reserved for meta info
+         message_number = 0      :: message_number(),
+         next_message_number = 1 :: message_number()}).
 
 %% Exported: start_link
+
+-spec start_link(binary()) -> serv:spawn_server_result().
 
 start_link(SpoolerDir) ->
     ?spawn_server(fun(Parent) -> init(Parent, SpoolerDir) end,
@@ -39,56 +37,79 @@ start_link(SpoolerDir) ->
 
 %% Exported: stop
 
+-spec stop(pid()) -> ok.
+
 stop(Pid) ->
     Pid ! stop,
     ok.
 
 %% Exported: lock
 
+-spec lock(pid()) -> ok | {error, already_lock_owner | lock_already_taken}.
+
 lock(Pid) ->
     serv:call(Pid, lock).
 
 %% Exported: unlock
+
+-spec unlock(pid()) -> ok | {error, not_locked | not_lock_owner}.
 
 unlock(Pid) ->
   serv:call(Pid, unlock).
 
 %% Exported: read
 
+-spec read(pid(), message_number()) -> {ok, #mail{}} | {error, no_such_mail}.
+
 read(Pid, MessageNumber) ->
     serv:call(Pid, {read, MessageNumber}).
 
 %% Exported: list
+
+-spec list(pid()) -> [#mail{}].
 
 list(Pid) ->
     serv:call(Pid, list).
 
 %% Exported: write
 
+-spec write(pid(), binary()) -> {ok, #mail{}} | {error, inet:posix()}.
+
 write(Pid, SourceFilename) ->
     serv:call(Pid, {write, SourceFilename}).
 
 %% Exported: delete
+
+-spec delete(pid(), message_number()) ->
+                    ok | {error, no_such_mail | already_deleted}.
 
 delete(Pid, MessageNumber) ->
     serv:call(Pid, {delete, MessageNumber}).
 
 %% Exported: undelete
 
+-spec undelete(pid()) -> ok.
+
 undelete(Pid) ->
     serv:call(Pid, undelete).
 
 %% Exported: remove
+
+-spec remove(pid()) -> ok.
 
 remove(Pid)  ->
     serv:call(Pid, remove).
 
 %% Exported: foldl
 
+-spec foldl(pid(), fun(), any()) -> any().
+
 foldl(Pid, Do, Acc) ->
     serv:call(Pid, {foldl, Do, Acc}).
 
 %% Exported: strerror
+
+-spec strerror(any()) -> binary().
 
 strerror({file_index_corrupt, FileIndexReason}) ->
     ?error_log({file_index_corrupt, FileIndexReason}),

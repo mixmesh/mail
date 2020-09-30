@@ -10,10 +10,10 @@
 -include_lib("mail/include/smtplib.hrl").
 
 -record(state,
-        {parent ::  pid(),
-         options :: #smtplib_options{},
+        {parent        ::  pid(),
+         options       :: #smtplib_options{},
          listen_socket :: inet:socket(),
-         acceptors :: [pid()]}).
+         acceptors     :: [pid()]}).
 
 %% Exported: start_link
 
@@ -356,8 +356,8 @@ apply_servlet(Command, #smtplib_options{servlets = Servlets},
 send(Socket, Status, Info) ->
   ?dbg_log({send, Status, Info}),
   if
-%%      Info == not_set ->
-%%          gen_tcp:send(Socket, [?i2b(Status), <<"\r\n">>]);
+      Info == not_set ->
+          gen_tcp:send(Socket, [?i2b(Status), <<"\r\n">>]);
       true ->
           gen_tcp:send(
             Socket, [?i2b(Status), <<" ">>, Info, <<"\r\n">>])

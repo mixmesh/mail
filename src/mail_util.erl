@@ -5,6 +5,11 @@
 
 %% Exported: get_arg
 
+-type type() :: none | integer | fun().
+-spec get_arg(binary(), [string:grapheme_cluster()], type(), [binary()]) ->
+                     {ok, binary(), [binary()]} |
+                     {error, no_arguments | bad_value | syntax_error}.
+
 get_arg([]) ->
     {error, no_arguments};
 get_arg([Arg|Rest]) ->
@@ -42,13 +47,21 @@ get_arg(Keyword, Separator, Type, [Arg|Rest]) ->
             {error, syntax_error}
     end.
 
+%% Exported: strip_pathp
+
+-spec strip_path(string()) -> string().
+
 strip_path(Path) ->
     string:strip(string:strip(Path, left, $<), right, $>).
 
 %% Exported: mktemp
 
+-spec mktemp(binary()) -> binary().
+
 mktemp(Dir) ->
   filename:join([Dir, ?i2b(erlang:unique_integer([positive]))]).
+
+-spec mktemp() -> binary().
 
 mktemp() ->
     ?i2b(erlang:unique_integer([positive])).
