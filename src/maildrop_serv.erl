@@ -144,7 +144,7 @@ init(Parent, SpoolerDir) ->
             KeyPosition = #mail.message_number,
             FileIndexFilename = filename:join([SpoolerDir, "file_index"]),
             case dets:open_file({file_index, self()},
-                                [{file, FileIndexFilename},
+                                [{file, ?b2l(FileIndexFilename)},
                                  {keypos, KeyPosition}]) of
                 {ok, FileIndex} ->
                     NextMessageNumber =

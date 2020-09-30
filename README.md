@@ -20,5 +20,5 @@ and ./player/src/pop3_proxy_serv.erl.
 ## Unit testing
 
 ```
-$ ../obscrete/bin/unit_test --config ../obscrete/etc/obscrete-no-players.conf maildrop_serv
+$ ../obscrete/bin/unit_test --config ../obscrete/etc/obscrete-do-nothing.conf maildrop_serv
 ```

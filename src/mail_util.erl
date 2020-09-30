@@ -52,7 +52,7 @@ get_arg(Keyword, Separator, Type, [Arg|Rest]) ->
 -spec strip_path(string()) -> string().
 
 strip_path(Path) ->
-    string:strip(string:strip(Path, left, $<), right, $>).
+    string:strip(string:strip(?b2l(Path), left, $<), right, $>).
 
 %% Exported: mktemp
 

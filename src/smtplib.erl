@@ -202,7 +202,7 @@ handle_line(_Socket, #smtplib_options{temp_dir = TempDir} = Options,
                 true ->
                     apply_servlet(auth, Options, Channel, Args)
             end;
-        _ when not Authenticated andalso Mode /= helo ->
+        _ when not Authenticated andalso Mode /= helo andalso Mode /= auth ->
             #response{status = 503, info = <<"authentication required">>};
         %% https://tools.ietf.org/html/rfc2821#section-4.1.1.2
         <<"MAIL">> when Mode /= helo ->
