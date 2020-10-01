@@ -1,5 +1,5 @@
 -module(maildrop_serv).
--export([start_link/1, stop/1]).
+-export([start_link/2, stop/1]).
 -export([lock/1, unlock/1]).
 -export([read/2, list/1, write/2]).
 -export([delete/2, undelete/1, remove/1]).
@@ -29,11 +29,15 @@
 
 %% Exported: start_link
 
--spec start_link(binary()) -> serv:spawn_server_result().
+-spec start_link(binary(), boolean()) -> serv:spawn_server_result().
 
-start_link(SpoolerDir) ->
+start_link(SpoolerDir, true) ->
     ?spawn_server(fun(Parent) -> init(Parent, SpoolerDir) end,
-                  fun message_handler/1).
+                  fun message_handler/1);
+start_link(SpoolerDir, false) ->
+    ?spawn_server_opts(fun(Parent) -> init(Parent, SpoolerDir) end,
+                       fun message_handler/1,
+                       #serv_options{name = maildrop_serv}).
 
 %% Exported: stop
 
