@@ -49,7 +49,7 @@ get_arg(Keyword, Separator, Type, [Arg|Rest]) ->
 
 %% Exported: strip_pathp
 
--spec strip_path(string()) -> string().
+-spec strip_path(binary()) -> string().
 
 strip_path(Path) ->
     string:strip(string:strip(?b2l(Path), left, $<), right, $>).
