@@ -7,7 +7,7 @@
 
 -type type() :: none | integer | fun().
 -spec get_arg(binary(), [string:grapheme_cluster()], type(), [binary()]) ->
-                     {ok, binary(), [binary()]} |
+                     {ok, any(), [binary()]} |
                      {error, no_arguments | bad_value | syntax_error}.
 
 get_arg([]) ->
@@ -47,7 +47,7 @@ get_arg(Keyword, Separator, Type, [Arg|Rest]) ->
             {error, syntax_error}
     end.
 
-%% Exported: strip_pathp
+%% Exported: strip_path
 
 -spec strip_path(binary()) -> string().
 
