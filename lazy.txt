@@ -1,0 +1,8 @@
+fmpeg \
+  -i opengl-rotating-triangle.mp4 \
+  -r 15 \
+  -vf "scale=512:-1,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" \
+  -ss 00:00:03 -to 00:00:06 \
+  opengl-rotating-triangle-palettegen.gif
+
+swaks --from p2@obscrete.net --to p8@obscrete.net --server 127.0.0.1:16058 --auth LOGIN --auth-user p42 --auth-password baz --body "FOO\r\n"^C

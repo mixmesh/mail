@@ -296,7 +296,7 @@ handle_line(_Socket, #smtplib_options{temp_dir = TempDir} = Options,
                              Channel#channel{
                                data = Data#data{
                                         headers = [{CanonicalName,
-                                                    CanonicalValue}, Headers],
+                                                    CanonicalValue}|Headers],
                                         size = Size + size(Line)}}};
                         _ ->
                             %% FIXME: Support multiple part messages
@@ -312,7 +312,7 @@ handle_line(_Socket, #smtplib_options{temp_dir = TempDir} = Options,
                     ok = file:write(Fd, Line),
                     {data, Channel#channel{
                              data = Data#data{
-                                      headers = [{Name, ?l2b([Value, Line])},
+                                      headers = [{Name, ?l2b([Value, Line])}|
                                                  RemainingHeaders],
                                       size = Size + size(Line)}}}
             end;

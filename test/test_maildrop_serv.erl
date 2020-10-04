@@ -1,4 +1,4 @@
--module(unit_test_maildrop_serv).
+-module(test_maildrop_serv).
 -export([start/0]).
 
 -include_lib("mail/include/maildrop_serv.hrl").
@@ -6,7 +6,7 @@
 start() ->
     _ = file:delete("/tmp/file_index"),
     ok = file:write_file("/tmp/foo.dat", <<"bar">>),
-    {ok, Pid} = maildrop_serv:start_link("/tmp"),
+    {ok, Pid} = maildrop_serv:start_link(<<"/tmp">>, false),
     ok = maildrop_serv:lock(Pid),
     {ok, _} = maildrop_serv:write(Pid, "/tmp/foo.dat"),
     1 = length(maildrop_serv:list(Pid)),

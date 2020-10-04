@@ -16,3 +16,6 @@ clean:
 %.beam: %.erl
 	env $(ERLC) $(ERLC_FLAGS) $<
 #@END-TEST-DEFAULT-RULES@
+
+runtest: all
+	../../obscrete/bin/run_test --config ../../obscrete/etc/obscrete-do-nothing.conf .

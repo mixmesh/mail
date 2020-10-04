@@ -17,8 +17,17 @@ and ./player/src/pop3_proxy_serv.erl.
   <dd>Mail storage suitable for servers built with the POP3 and SMTP libraries</dd>
 </dl>
 
-## Unit testing
+## Testing
+
+`make runtest` runs all tests, i.e.
 
 ```
-$ ../obscrete/bin/unit_test --config ../obscrete/etc/obscrete-do-nothing.conf maildrop_serv
+$ ../obscrete/bin/run_test --config ../obscrete/etc/obscrete-pki-only.conf test/
+```
+
+Tests can be run individually as well:
+
+```
+$ ../obscrete/bin/run_test --config ../obscrete/etc/obscrete-do-nothing.conf maildrop_serv
+
 ```

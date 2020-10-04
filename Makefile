@@ -5,3 +5,6 @@ all:
 clean:
 	(cd test && $(MAKE) clean)
 	(cd src && $(MAKE) clean)
+
+runtest:
+	(cd test && $(MAKE) runtest)
