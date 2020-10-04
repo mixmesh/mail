@@ -21,13 +21,8 @@ and ./player/src/pop3_proxy_serv.erl.
 
 `make runtest` runs all tests, i.e.
 
-```
-$ ../obscrete/bin/run_test --config ../obscrete/etc/obscrete-pki-only.conf test/
-```
+`$ ../obscrete/bin/run_test --config ../obscrete/etc/obscrete-pki-only.conf test/`
 
 Tests can be run individually as well:
 
-```
-$ ../obscrete/bin/run_test --config ../obscrete/etc/obscrete-do-nothing.conf maildrop_serv
-
-```
+`$ ../obscrete/bin/run_test --config ../obscrete/etc/obscrete-do-nothing.conf maildrop_serv`
