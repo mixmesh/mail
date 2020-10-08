@@ -44,8 +44,7 @@ start_link(SpoolerDir, false) ->
 -spec stop(pid()) -> ok.
 
 stop(Pid) ->
-    Pid ! stop,
-    ok.
+    serv:cast(Pid, stop).
 
 %% Exported: lock
 
@@ -187,7 +186,7 @@ message_handler(#state{parent = Parent,
                        next_message_number = NextMessageNumber,
                        locker = Locker} = State) ->
   receive
-      stop ->
+      {cast, stop} ->
           stop;
       %%
       %% Note: Calls to lock, unlock and write do not require a lock

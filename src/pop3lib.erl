@@ -21,9 +21,9 @@
         inet:socket_address(), inet:port_number(), #pop3lib_options{}) ->
           serv:spawn_server_result().
 
-start_link(Address, Port, Options) ->
+start_link(IpAddress, Port, Options) ->
     ?spawn_server(
-       fun(Parent) -> init(Parent, Address, Port, Options) end,
+       fun(Parent) -> init(Parent, IpAddress, Port, Options) end,
        fun initial_message_handler/1).
 
 %% Exported: stop
@@ -55,10 +55,10 @@ initial_message_handler(
                            initial_servlet_state = PatchedServletState}}}
     end.
 
-init(Parent, Address, Port, Options) ->
+init(Parent, IpAddress, Port, Options) ->
     {ok, ListenSocket} =
-        gen_tcp:listen(Port, [{active, false}, {ip, Address}, {reuseaddr, true},
-                              {packet, line}, binary]),
+        gen_tcp:listen(Port, [{active, false}, {ip, IpAddress},
+                              {reuseaddr, true}, {packet, line}, binary]),
     self() ! accepted,
     {ok, #state{parent = Parent,
                 options = Options,
