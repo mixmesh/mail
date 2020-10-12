@@ -31,11 +31,11 @@
 
 -spec start_link(binary(), boolean()) -> serv:spawn_server_result().
 
-start_link(SpoolerDir, true) ->
-    ?spawn_server(fun(Parent) -> init(Parent, SpoolerDir) end,
+start_link(Dir, true) ->
+    ?spawn_server(fun(Parent) -> init(Parent, Dir) end,
                   fun message_handler/1);
-start_link(SpoolerDir, false) ->
-    ?spawn_server_opts(fun(Parent) -> init(Parent, SpoolerDir) end,
+start_link(Dir, false) ->
+    ?spawn_server_opts(fun(Parent) -> init(Parent, Dir) end,
                        fun message_handler/1,
                        #serv_options{name = ?MODULE}).
 
@@ -141,11 +141,11 @@ strerror(Reason) ->
 %% Server
 %%
 
-init(Parent, SpoolerDir) ->
-    case filelib:is_dir(SpoolerDir) of
+init(Parent, Dir) ->
+    case filelib:is_dir(Dir) of
         true ->
             KeyPosition = #mail.message_number,
-            FileIndexFilename = filename:join([SpoolerDir, "file_index"]),
+            FileIndexFilename = filename:join([Dir, "file_index"]),
             case dets:open_file({file_index, self()},
                                 [{file, ?b2l(FileIndexFilename)},
                                  {keypos, KeyPosition}]) of
@@ -165,10 +165,9 @@ init(Parent, SpoolerDir) ->
                     %% Stored in #state{} for convenience
                     true = ets:delete(Index, 0),
                     ?daemon_tag_log(
-                       system, "Maildrop server has been started: ~s",
-                       [SpoolerDir]),
+                       system, "Maildrop server has been started: ~s", [Dir]),
                     {ok, #state{parent = Parent,
-                                spooler_dir = SpoolerDir,
+                                spooler_dir = Dir,
                                 index = Index,
                                 file_index = FileIndex,
                                 next_message_number = NextMessageNumber}};
@@ -180,7 +179,7 @@ init(Parent, SpoolerDir) ->
     end.
 
 message_handler(#state{parent = Parent,
-                       spooler_dir = SpoolerDir,
+                       spooler_dir = Dir,
                        index = Index,
                        file_index = FileIndex,
                        next_message_number = NextMessageNumber,
@@ -216,7 +215,7 @@ message_handler(#state{parent = Parent,
           end;
       {call, From, {write, SourceFilename}} ->
           TargetFilename =
-              filename:join([SpoolerDir, ?i2b(NextMessageNumber)]),
+              filename:join([Dir, ?i2b(NextMessageNumber)]),
           case file:copy(SourceFilename, TargetFilename) of
               {ok, Octets} ->
                   case compute_digest(TargetFilename) of
