@@ -1,8 +1,8 @@
-# Mail server support tools 
+# Mail server support tools
 
 A mail storage server and plugin based libraries to build POP3 and
-SMTP servers. Examples can be found in ./player/src/smtp_proxy_serv.erl
-and ./player/src/pop3_proxy_serv.erl.
+SMTP servers. Examples can be found in ./player/src/smtp_serv.erl
+and ./player/src/pop3_serv.erl.
 
 ## Files
 
