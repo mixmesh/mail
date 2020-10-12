@@ -37,7 +37,7 @@ start_link(SpoolerDir, true) ->
 start_link(SpoolerDir, false) ->
     ?spawn_server_opts(fun(Parent) -> init(Parent, SpoolerDir) end,
                        fun message_handler/1,
-                       #serv_options{name = maildrop_serv}).
+                       #serv_options{name = ?MODULE}).
 
 %% Exported: stop
 
@@ -187,6 +187,7 @@ message_handler(#state{parent = Parent,
                        locker = Locker} = State) ->
   receive
       {cast, stop} ->
+          dets:close(FileIndex),
           stop;
       %%
       %% Note: Calls to lock, unlock and write do not require a lock
@@ -287,6 +288,7 @@ message_handler(#state{parent = Parent,
           ok = undelete_all(Index, FileIndex),
           {noreply, State#state{locker = none}};
       {'EXIT', Parent, Reason} ->
+          dets:close(FileIndex),
           exit(Reason);
       UnknownMessage ->
           ?error_log({unknown_message, UnknownMessage}),
