@@ -5,6 +5,7 @@
 
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
+-include_lib("apptools/include/shorthand.hrl").
 -include_lib("mail/include/pop3lib.hrl").
 
 -define(FILE_CHUNK_SIZE, 8192).
@@ -57,8 +58,20 @@ initial_message_handler(
 
 init(Parent, IpAddress, Port, Options) ->
     {ok, ListenSocket} =
-        gen_tcp:listen(Port, [{active, false}, {ip, IpAddress},
-                              {reuseaddr, true}, {packet, line}, binary]),
+        ssl:listen(Port,
+                   [{active, false},
+                    {ip, IpAddress},
+                    {reuseaddr, true},
+                    {packet, line},
+                    {mode, binary},
+                    %% https://github.com/ssllabs/research/wiki/SSL-and-TLS-Deployment-Best-Practices
+                    %%{verify_type, verify_none},
+                    {secure_renegotiate, true},
+                    %%{versions, ['tlsv1.2']},
+                    {honor_cipher_order, true},
+                    %%{ciphers, "ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-SHA ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-AES128-SHA256 ECDHE-ECDSA-AES256-SHA384 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-RSA-AES128-SHA ECDHE-RSA-AES256-SHA ECDHE-RSA-AES128-SHA256 ECDHE-RSA-AES256-SHA384 DHE-RSA-AES128-GCM-SHA256 DHE-RSA-AES256-GCM-SHA384 DHE-RSA-AES128-SHA DHE-RSA-AES256-SHA DHE-RSA-AES128-SHA256 DHE-RSA-AES256-SHA256"},
+                    {certfile, ?b2l(Options#pop3lib_options.cert_filename)},
+                    {reuse_sessions, true}]),
     self() ! accepted,
     {ok, #state{parent = Parent,
                 options = Options,
@@ -72,7 +85,7 @@ message_handler(
          acceptors = Acceptors} = State) ->
     receive
         {call, From, stop} ->
-            ok = gen_tcp:close(ListenSocket),
+            ok = ssl:close(ListenSocket),
             {stop, From, ok};
         accepted ->
             Owner = self(),
@@ -83,7 +96,7 @@ message_handler(
         {system, From, Request} ->
             {system, From, Request};
         {'EXIT', Parent, Reason} ->
-            ok = gen_tcp:close(ListenSocket),
+            ok = ssl:close(ListenSocket),
             exit(Reason);
         {'EXIT', Pid, normal} ->
             case lists:member(Pid, Acceptors) of
@@ -103,20 +116,21 @@ acceptor(Owner, #pop3lib_options{
                    greeting = Greeting,
                    initial_servlet_state = InitialServletState} = Options,
          ListenSocket) ->
-    {ok, Socket} = gen_tcp:accept(ListenSocket),
+    {ok, Socket} = ssl:transport_accept(ListenSocket),
+    {ok, SSLSocket} = ssl:handshake(Socket),
     Owner ! accepted,
-    ok = send(Socket, ok, Greeting),
-    ok = read_lines(Socket, Options,
+    ok = send(SSLSocket, ok, Greeting),
+    ok = read_lines(SSLSocket, Options,
                     #channel{mode = authorization,
                              servlet_state = InitialServletState}),
-    gen_tcp:close(Socket).
+    ssl:close(SSLSocket).
 
 %%
 %% Read lines
 %%
 
 read_lines(Socket, #pop3lib_options{timeout = Timeout} = Options, Channel) ->
-    case gen_tcp:recv(Socket, 0, Timeout) of
+    case ssl:recv(Socket, 0, Timeout) of
         {ok, Line} ->
             ?dbg_log({line, Line}),
             case handle_line(Socket, Options, Channel, Line) of
@@ -172,7 +186,7 @@ handle_line(_Socket, Options,
         %% https://tools.ietf.org/html/rfc1939#page-8
         <<"RETR">> when Mode == transaction ->
             apply_servlet(retr, Options, Channel, Args);
-        %% https://tools.ietf.org/html/rfc1939#page-8 
+        %% https://tools.ietf.org/html/rfc1939#page-8
         <<"DELE">> when Mode == transaction ->
             apply_servlet(dele, Options, Channel, Args);
         %% https://tools.ietf.org/html/rfc1939#page-9
@@ -198,7 +212,7 @@ handle_line(_Socket, Options,
         <<"PASS">> when Mode == password ->
             apply_servlet(pass, Options, Channel, Args);
         %% https://tools.ietf.org/html/rfc5034
-        <<"CAPA">> when Mode == authorization ->
+        <<"CAPA">> ->
             apply_servlet(capa, Options, Channel, Line);
         %% https://tools.ietf.org/html/rfc5034
         <<"AUTH">> when Mode == authorization andalso not Authorized ->
@@ -232,11 +246,11 @@ send_file_chunks(Socket, File) ->
     case file:read(File, ?FILE_CHUNK_SIZE) of
         {ok, Chunk} ->
             ?dbg_log({send_file_chunks, ok, Chunk}),
-            ok = gen_tcp:send(Socket, Chunk),
+            ok = ssl:send(Socket, Chunk),
             send_file_chunks(Socket, File);
         eof ->
             ?dbg_log({send_file_chunks, eof}),
-            ok = gen_tcp:send(Socket, <<".\r\n">>),
+            ok = ssl:send(Socket, <<".\r\n">>),
             file:close(File);
         {error, Reason} ->
             ?error_log({chunk_failure, Reason}),
@@ -252,35 +266,35 @@ send_file(Socket, Status, Filename, N) ->
 send_file_lines(Socket, File, Mode, N) ->
     case file:read_line(File) of
         eof ->
-            ok = gen_tcp:send(Socket, <<".\r\n">>),
+            ok = ssl:send(Socket, <<".\r\n">>),
             file:close(File);
         {error, Reason} ->
             ?error_log({line_failure, Reason}),
-            ok = gen_tcp:send(Socket, <<".\r\n">>),
+            ok = ssl:send(Socket, <<".\r\n">>),
             file:close(File);
         _ when N == 0 ->
-            ok = gen_tcp:send(Socket, <<".\r\n">>),
+            ok = ssl:send(Socket, <<".\r\n">>),
             file:close(File);
         {ok, Line} when Mode == headers ->
-            ok = gen_tcp:send(Socket, Line),
+            ok = ssl:send(Socket, Line),
             send_file_lines(Socket, File, Mode, N);
         {ok, <<"\r\n">>} when Mode == headers ->
-            ok = gen_tcp:send(Socket, <<"\r\n">>),
+            ok = ssl:send(Socket, <<"\r\n">>),
             send_file_lines(Socket, File, body, N);
         {ok, Line} when Mode == body ->
-            ok = gen_tcp:send(Socket, Line),
+            ok = ssl:send(Socket, Line),
             send_file_lines(Socket, File, Mode, N - 1)
     end.
 
 send(Socket, Status)  ->
     ?dbg_log({send, Status}),
-    gen_tcp:send(Socket, [format_status(Status), <<"\r\n">>]).
+    ssl:send(Socket, [format_status(Status), <<"\r\n">>]).
 
 send(Socket, Status, not_set) ->
     send(Socket, Status);
 send(Socket, Status, Info) ->
     ?dbg_log({send, Status, Info}),
-    gen_tcp:send(Socket, [format_status(Status), <<" ">>, Info, <<"\r\n">>]).
+    ssl:send(Socket, [format_status(Status), <<" ">>, Info, <<"\r\n">>]).
 
 format_status(ok) -> <<"+OK">>;
 format_status(err) -> <<"-ERR">>.
@@ -291,7 +305,7 @@ send_multi_lines(Socket, Status, Info, Lines) ->
   send_multi_lines(Socket, Lines).
 
 send_multi_lines(Socket, []) ->
-    ok = gen_tcp:send(Socket, <<".\r\n">>);
+    ok = ssl:send(Socket, <<".\r\n">>);
 send_multi_lines(Socket, [Line|Rest]) ->
-    ok = gen_tcp:send(Socket, [Line, <<"\r\n">>]),
+    ok = ssl:send(Socket, [Line, <<"\r\n">>]),
     send_multi_lines(Socket, Rest).

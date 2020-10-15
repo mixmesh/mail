@@ -7,7 +7,8 @@
          handler :: fun()}).
 
 -record(pop3lib_options,
-        {timeout                               :: integer(),
+        {cert_filename                         :: binary(),
+         timeout                               :: integer(),
          greeting                              :: binary(),
          initial_servlet_state                 :: any(),
          servlets                              :: [#servlet{}],
