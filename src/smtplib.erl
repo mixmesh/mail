@@ -57,8 +57,20 @@ initial_message_handler(
 
 init(Parent, IpAddress, Port, Options) ->
     {ok, ListenSocket} =
-        gen_tcp:listen(Port, [{active, false}, {ip, IpAddress},
-                              {reuseaddr, true}, {packet, line}, binary]),
+        ssl:listen(Port,
+                   [{active, false},
+                    {ip, IpAddress},
+                    {reuseaddr, true},
+                    {packet, line},
+                    {mode, binary},
+                    %% https://github.com/ssllabs/research/wiki/SSL-and-TLS-Deployment-Best-Practices
+                    %%{verify_type, verify_none},
+                    {secure_renegotiate, true},
+                    %%{versions, ['tlsv1.2']},
+                    {honor_cipher_order, true},
+                    %%{ciphers, "ECDHE-ECDSA-AES128-GCM-SHA256 ECDHE-ECDSA-AES256-GCM-SHA384 ECDHE-ECDSA-AES128-SHA ECDHE-ECDSA-AES256-SHA ECDHE-ECDSA-AES128-SHA256 ECDHE-ECDSA-AES256-SHA384 ECDHE-RSA-AES128-GCM-SHA256 ECDHE-RSA-AES256-GCM-SHA384 ECDHE-RSA-AES128-SHA ECDHE-RSA-AES256-SHA ECDHE-RSA-AES128-SHA256 ECDHE-RSA-AES256-SHA384 DHE-RSA-AES128-GCM-SHA256 DHE-RSA-AES256-GCM-SHA384 DHE-RSA-AES128-SHA DHE-RSA-AES256-SHA DHE-RSA-AES128-SHA256 DHE-RSA-AES256-SHA256"},
+                    {certfile, ?b2l(Options#smtplib_options.cert_filename)},
+                    {reuse_sessions, true}]),
     self() ! accepted,
     {ok, #state{parent = Parent,
                 options = Options,
@@ -72,7 +84,7 @@ message_handler(
          acceptors = Acceptors} = State) ->
     receive
         {call, From, stop} ->
-            ok = gen_tcp:close(ListenSocket),
+            ok = ssl:close(ListenSocket),
             {stop, From, ok};
         accepted ->
             Owner = self(),
@@ -83,7 +95,7 @@ message_handler(
         {system, From, Request} ->
             {system, From, Request};
         {'EXIT', Parent, Reason} ->
-            ok = gen_tcp:close(ListenSocket),
+            ok = ssl:close(ListenSocket),
             exit(Reason);
         {'EXIT', Pid, normal} ->
             case lists:member(Pid, Acceptors) of
@@ -104,22 +116,23 @@ acceptor(Owner, #smtplib_options{
                    authenticate = Authenticate,
                    initial_servlet_state = InitialServletState} = Options,
          ListenSocket) ->
-    {ok, Socket} = gen_tcp:accept(ListenSocket),
+    {ok, Socket} = ssl:transport_accept(ListenSocket),
+    {ok, SSLSocket} = ssl:handshake(Socket),
     Owner ! accepted,
-    ok = send(Socket, 220, Greeting),
+    ok = send(SSLSocket, 220, Greeting),
     Authenticated = (Authenticate == no),
-    read_lines(Socket, Options,
+    read_lines(SSLSocket, Options,
                #channel{mode = init,
                         authenticated = Authenticated,
                         servlet_state = InitialServletState}),
-    gen_tcp:close(Socket).
+    ssl:close(SSLSocket).
 
 %%
 %% Read lines
 %%
 
 read_lines(Socket, #smtplib_options{timeout = Timeout} = Options, Channel) ->
-    case gen_tcp:recv(Socket, 0, Timeout) of
+    case ssl:recv(Socket, 0, Timeout) of
         {ok, Line} ->
             ?dbg_log({line, Line}),
             case handle_line(Socket, Options, Channel, Line) of
@@ -229,7 +242,7 @@ handle_line(_Socket, #smtplib_options{temp_dir = TempDir} = Options,
             #response{
                status = 354,
                info = <<"OK, Enter data, terminated with \\r\\n.\\r\\n">>,
-               channel = 
+               channel =
                    Channel#channel{mode = data,
                                     data = reset_data(TempDir, Data)}};
         %% https://tools.ietf.org/html/rfc2821#section-4.1.1.5
@@ -357,15 +370,15 @@ send(Socket, Status, Info) ->
   ?dbg_log({send, Status, Info}),
   if
       Info == not_set ->
-          gen_tcp:send(Socket, [?i2b(Status), <<"\r\n">>]);
+          ssl:send(Socket, [?i2b(Status), <<"\r\n">>]);
       true ->
-          gen_tcp:send(
+          ssl:send(
             Socket, [?i2b(Status), <<" ">>, Info, <<"\r\n">>])
   end.
 
 send(Socket, Replies) ->
     ?dbg_log({send_many, Replies}),
-    gen_tcp:send(Socket, format_many_replies(Replies)).
+    ssl:send(Socket, format_many_replies(Replies)).
 
 format_many_replies(Replies) ->
     case Replies of

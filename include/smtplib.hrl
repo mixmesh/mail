@@ -7,7 +7,8 @@
          handler :: fun()}).
 
 -record(smtplib_options,
-        {timeout                               :: integer(),
+        {cert_filename                         :: binary(),
+         timeout                               :: integer(),
          greeting                              :: binary() | not_set,
          authenticate                          :: yes | no,
          initial_servlet_state                 :: any(),
