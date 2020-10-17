@@ -12,7 +12,7 @@
 -record(state,
         {parent        ::  pid(),
          options       :: #smtplib_options{},
-         listen_socket :: inet:socket(),
+         listen_socket :: ssl:sslsocket(),
          acceptors     :: [pid()]}).
 
 %% Exported: start_link
@@ -117,15 +117,19 @@ acceptor(Owner, #smtplib_options{
                    initial_servlet_state = InitialServletState} = Options,
          ListenSocket) ->
     {ok, Socket} = ssl:transport_accept(ListenSocket),
-    {ok, SSLSocket} = ssl:handshake(Socket),
-    Owner ! accepted,
-    ok = send(SSLSocket, 220, Greeting),
-    Authenticated = (Authenticate == no),
-    read_lines(SSLSocket, Options,
-               #channel{mode = init,
-                        authenticated = Authenticated,
-                        servlet_state = InitialServletState}),
-    ssl:close(SSLSocket).
+    case ssl:handshake(Socket) of
+        {ok, SSLSocket} ->
+            Owner ! accepted,
+            ok = send(SSLSocket, 220, Greeting),
+            Authenticated = (Authenticate == no),
+            read_lines(SSLSocket, Options,
+                       #channel{mode = init,
+                                authenticated = Authenticated,
+                                servlet_state = InitialServletState}),
+            ssl:close(SSLSocket);
+        {error, _Reason} ->
+            Owner ! accepted
+    end.
 
 %%
 %% Read lines
@@ -275,9 +279,7 @@ handle_line(_Socket, #smtplib_options{temp_dir = TempDir} = Options,
             apply_servlet(any, Options, Channel, Line)
     end;
 handle_line(_Socket, #smtplib_options{temp_dir = TempDir} = Options,
-            #channel{mode = Mode,
-                     authenticated = Authenticated,
-                     data = Data} = Channel, Line) when Line == <<".\r\n">> ->
+            #channel{data = Data} = Channel, Line) when Line == <<".\r\n">> ->
     ?dbg_log({'DATA', Data}),
     case apply_servlet(data, Options, Channel, Data)  of
         #response{channel = #channel{mode = helo} = Channel} = Response ->
@@ -286,10 +288,8 @@ handle_line(_Socket, #smtplib_options{temp_dir = TempDir} = Options,
         Response ->
             Response
     end;
-handle_line(_Socket, #smtplib_options{temp_dir = TempDir} = Options,
-            #channel{mode = Mode,
-                     authenticated = Authenticated,
-                     data = Data} = Channel, Line) ->
+handle_line(_Socket, #smtplib_options{temp_dir = TempDir},
+            #channel{data = Data} = Channel, Line) ->
     case {Line, Data} of
         {<<"\r\n">>, #data{fd = Fd, size = Size}} ->
             ok = file:write(Fd, <<"\r\n">>),

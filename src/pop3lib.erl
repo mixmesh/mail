@@ -13,7 +13,7 @@
 -record(state,
         {parent        :: pid(),
          options       :: #pop3lib_options{},
-         listen_socket :: inet:socket(),
+         listen_socket :: ssl:sslsocket(),
          acceptors     :: [pid()]}).
 
 %% Exported: start_link
@@ -117,13 +117,17 @@ acceptor(Owner, #pop3lib_options{
                    initial_servlet_state = InitialServletState} = Options,
          ListenSocket) ->
     {ok, Socket} = ssl:transport_accept(ListenSocket),
-    {ok, SSLSocket} = ssl:handshake(Socket),
-    Owner ! accepted,
-    ok = send(SSLSocket, ok, Greeting),
-    ok = read_lines(SSLSocket, Options,
-                    #channel{mode = authorization,
-                             servlet_state = InitialServletState}),
-    ssl:close(SSLSocket).
+    case ssl:handshake(Socket) of
+        {ok, SSLSocket} ->
+            Owner ! accepted,
+            ok = send(SSLSocket, ok, Greeting),
+            ok = read_lines(SSLSocket, Options,
+                            #channel{mode = authorization,
+                                     servlet_state = InitialServletState}),
+            ssl:close(SSLSocket);
+        {error, _Reason} ->
+            Owner ! accepted
+    end.
 
 %%
 %% Read lines
