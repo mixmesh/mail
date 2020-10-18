@@ -11,10 +11,10 @@
 -define(FILE_CHUNK_SIZE, 8192).
 
 -record(state,
-        {parent        :: pid(),
-         options       :: #pop3lib_options{},
+        {parent :: pid(),
+         options :: #pop3lib_options{},
          listen_socket :: ssl:sslsocket(),
-         acceptors     :: [pid()]}).
+         acceptors :: [pid()]}).
 
 %% Exported: start_link
 

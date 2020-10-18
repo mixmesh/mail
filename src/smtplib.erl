@@ -10,10 +10,10 @@
 -include_lib("mail/include/smtplib.hrl").
 
 -record(state,
-        {parent        ::  pid(),
-         options       :: #smtplib_options{},
+        {parent ::  pid(),
+         options :: #smtplib_options{},
          listen_socket :: ssl:sslsocket(),
-         acceptors     :: [pid()]}).
+         acceptors :: [pid()]}).
 
 %% Exported: start_link
 

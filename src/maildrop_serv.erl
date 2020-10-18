@@ -23,8 +23,8 @@
                 locker = none :: pid() | none}).
 
 -record(meta_info,
-        {%% 0 is reserved for meta info
-         message_number = 0      :: message_number(),
+        {%% 0 is reserved for meta info (very ugly!)
+         message_number = 0 :: message_number(),
          next_message_number = 1 :: message_number()}).
 
 %% Exported: start_link

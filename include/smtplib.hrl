@@ -7,21 +7,21 @@
          handler :: fun()}).
 
 -record(smtplib_options,
-        {cert_filename                         :: binary(),
-         timeout                               :: integer(),
-         greeting                              :: binary() | not_set,
-         authenticate                          :: yes | no,
-         initial_servlet_state                 :: any(),
-         servlets                              :: [#servlet{}],
+        {cert_filename :: binary(),
+         timeout :: integer(),
+         greeting :: binary() | not_set,
+         authenticate :: yes | no,
+         initial_servlet_state :: any(),
+         servlets :: [#servlet{}],
          patch_initial_servlet_state = not_set :: fun() | not_set,
-         temp_dir                              :: binary()}).
+         temp_dir :: binary()}).
 
 -record(data,
         {context = headers :: headers | letter,
-         headers = []      :: [{Key :: binary(), Value :: binary()}],
-         filename          :: binary(),
-         fd                :: file:io_device(),
-         size = 0          :: integer()}).
+         headers = [] :: [{Key :: binary(), Value :: binary()}],
+         filename :: binary(),
+         fd :: file:io_device(),
+         size = 0 :: integer()}).
 
 -record(channel,
         {mode :: init | helo | auth | mail | rcpt | data,
@@ -33,8 +33,8 @@
         {action = continue :: break | continue,
          status = 250 :: integer(),
          info = <<"OK">> :: binary(),
-         replies = not_set ::  not_set |
-                               [{Status :: integer(), Info :: binary()}],
+         replies = not_set :: not_set |
+                              [{Status :: integer(), Info :: binary()}],
          channel = not_set ::  not_set | #channel{}}).
 
 -endif.
