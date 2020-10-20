@@ -3,10 +3,10 @@
 
 %% https://tools.ietf.org/html/rfc1939
 
+-include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("apptools/include/shorthand.hrl").
 -include_lib("mail/include/pop3lib.hrl").
--include_lib("obscrete/include/log.hrl").
 
 -define(FILE_CHUNK_SIZE, 8192).
 

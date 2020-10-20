@@ -4,10 +4,10 @@
 %% https://tools.ietf.org/html/rfc2821
 %% https://tools.ietf.org/html/rfc5321
 
+-include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("apptools/include/shorthand.hrl").
 -include_lib("mail/include/smtplib.hrl").
--include_lib("obscrete/include/log.hrl").
 
 -record(state,
         {parent ::  pid(),
@@ -288,8 +288,7 @@ handle_line(_Socket, #smtplib_options{temp_dir = TempDir} = Options,
         Response ->
             Response
     end;
-handle_line(_Socket, #smtplib_options{temp_dir = TempDir},
-            #channel{data = Data} = Channel, Line) ->
+handle_line(_Socket, _Options, #channel{data = Data} = Channel, Line) ->
     case {Line, Data} of
         {<<"\r\n">>, #data{fd = Fd, size = Size}} ->
             ok = file:write(Fd, <<"\r\n">>),
