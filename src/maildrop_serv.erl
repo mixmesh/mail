@@ -9,7 +9,7 @@
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("apptools/include/shorthand.hrl").
--include_lib("mail/include/maildrop_serv.hrl").
+-include("../include/maildrop_serv.hrl").
 
 -define(FILE_CHUNK_SIZE, 8192).
 

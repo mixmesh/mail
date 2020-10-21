@@ -6,7 +6,7 @@
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("apptools/include/shorthand.hrl").
--include_lib("mail/include/pop3lib.hrl").
+-include("../include/pop3lib.hrl").
 
 -define(FILE_CHUNK_SIZE, 8192).
 

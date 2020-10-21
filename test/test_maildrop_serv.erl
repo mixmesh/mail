@@ -1,7 +1,7 @@
 -module(test_maildrop_serv).
 -export([start/0]).
 
--include_lib("mail/include/maildrop_serv.hrl").
+-include("../include/maildrop_serv.hrl").
 
 start() ->
     _ = file:delete("/tmp/file_index"),

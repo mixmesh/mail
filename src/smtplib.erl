@@ -7,7 +7,7 @@
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
 -include_lib("apptools/include/shorthand.hrl").
--include_lib("mail/include/smtplib.hrl").
+-include("../include/smtplib.hrl").
 
 -record(state,
         {parent ::  pid(),
