@@ -289,6 +289,8 @@ message_handler(#state{parent = Parent,
       {'EXIT', Parent, Reason} ->
           dets:close(FileIndex),
           exit(Reason);
+      {neighbour_workers, _NeighbourWorkers} ->
+          noreply;
       UnknownMessage ->
           ?error_log({unknown_message, UnknownMessage}),
           noreply
