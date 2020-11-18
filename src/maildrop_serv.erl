@@ -5,6 +5,7 @@
 -export([delete/2, undelete/1, remove/1]).
 -export([foldl/3]).
 -export([strerror/1]).
+-export([message_handler/1]).
 
 -include_lib("apptools/include/log.hrl").
 -include_lib("apptools/include/serv.hrl").
@@ -33,10 +34,10 @@
 
 start_link(Dir, true) ->
     ?spawn_server(fun(Parent) -> init(Parent, Dir) end,
-                  fun message_handler/1);
+                  fun ?MODULE:message_handler/1);
 start_link(Dir, false) ->
     ?spawn_server_opts(fun(Parent) -> init(Parent, Dir) end,
-                       fun message_handler/1,
+                       fun ?MODULE:message_handler/1,
                        #serv_options{name = ?MODULE}).
 
 %% Exported: stop

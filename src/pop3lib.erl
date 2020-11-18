@@ -1,5 +1,6 @@
 -module(pop3lib).
 -export([start_link/3, stop/1]).
+-export([message_handler/1]).
 
 %% https://tools.ietf.org/html/rfc1939
 
@@ -47,10 +48,10 @@ initial_message_handler(
       State) ->
     case PatchInitialServletState of
         not_set ->
-            {swap_message_handler, fun message_handler/1};
+            {swap_message_handler, fun ?MODULE:message_handler/1};
         _ ->
             PatchedServletState = PatchInitialServletState(InitialServletState),
-            {swap_message_handler, fun message_handler/1,
+            {swap_message_handler, fun ?MODULE:message_handler/1,
              State#state{
                options = Options#pop3lib_options{
                            initial_servlet_state = PatchedServletState}}}
