@@ -1,6 +1,6 @@
 -module(smtplib).
 -export([start_link/3, stop/1]).
--export([message_handler/1]).
+-export([initial_message_handler/1, message_handler/1]).
 
 %% https://tools.ietf.org/html/rfc2821
 %% https://tools.ietf.org/html/rfc5321
@@ -25,7 +25,7 @@
 start_link(IpAddress, Port, Options) ->
     ?spawn_server(
        fun(Parent) -> init(Parent, IpAddress, Port, Options) end,
-       fun initial_message_handler/1).
+       fun ?MODULE:initial_message_handler/1).
 
 %% Exported: stop
 
