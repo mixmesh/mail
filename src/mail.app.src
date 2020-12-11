@@ -1,8 +1,8 @@
 %% -*- erlang -*-
 {application, mail,
  [{description, "Mail server support tools"},
-  {vsn, "1.0"},
-  {modules, [maildrop_serv, mail_util, pop3lib, smtplib]},
+  {vsn, git},
+  {modules, ["@@MODULES@@"]},
   {registered, []},
   {applications, [kernel, stdlib]}
 ]}.

@@ -1,18 +1,39 @@
-#@BEGIN-SRC-DEFAULT-RULES@
+#@BEGIN-APP-DEFAULT-RULES@
+APP=$(shell basename `cd ..; pwd`)
 ERLC=$(shell which erlc)
-ERLC_FLAGS=-I ../.. +debug_info -Ddebug
-ERL_HEADERS=$(wildcard *.hrl) $(wildcard ../../*/include/*.hrl)
-ERL_SOURCES=$(wildcard *.erl)
+ERLC_FLAGS=-MMD -MF .$<.d -I ../.. +debug_info
+YRL_SRC=$(wildcard *.yrl)
+XRL_SRC=$(wildcard *.xrl)
+ERL_SOURCES=$(wildcard *.erl) $(YRL_SRC:%.yrl=%.erl) $(XRL_SRC:%.xrl=%.erl)
 ERL_OBJECTS=$(ERL_SOURCES:%.erl=../ebin/%.beam)
 ALL_OBJECTS=$(ERL_OBJECTS)
+ERL_MODULES=$(ERL_SOURCES:%.erl=%)
+comma=,
+empty=
+space = $(empty) $(empty)
+MODULES=$(subst $(space),$(comma),$(ERL_MODULES))
+VERSION=$(shell git describe --always --tags)
+APP_SRC=$(APP).app.src
+APP_TARGET=../ebin/$(APP).app
 
-all: $(ALL_OBJECTS)
+.PRECIOUS: $(YRL_SRC:%.yrl=%.erl) $(XRL_SRC:%.xrl=%.erl)
 
-$(ERL_OBJECTS): $(ERL_HEADERS)
+all: $(APP_TARGET) $(ALL_OBJECTS)
 
 clean:
-	rm -f $(ALL_OBJECTS) *.core
+	rm -f $(ALL_OBJECTS) *.core .*.d
 
 ../ebin/%.beam: %.erl
 	$(ERLC) $(ERLC_FLAGS) -o ../ebin $<
-#@END-SRC-DEFAULT-RULES@
+
+%.erl: %.yrl
+	$(ERLC) $<
+
+%.erl: %.xrl
+	$(ERLC) $<
+
+$(APP_TARGET): $(APP_SRC)
+	sed -e 's;{vsn,.*git};{vsn,"$(VERSION)"};' -e 's;"@@MODULES@@";$(MODULES);' $(APP_SRC) > $(APP_TARGET)
+
+-include .*.d
+#@END-APP-DEFAULT-RULES@
