@@ -90,13 +90,17 @@ inject_headers(Mail, NewHeaders) ->
 %% Exported: inject_footer
 
 inject_footer(Mail, Footer) ->
-    [Headers, Body] = binary:split(Mail, <<"\r\n\r\n">>),
-    case is_plain_text(Headers) of
-        yes ->
-            ?l2b([Headers, <<"\r\n\r\n">>,
-                  string:trim(Body, trailing),
-                  Footer, <<"\r\n">>]);
-        no ->
+    case binary:split(Mail, <<"\r\n\r\n">>) of
+        [Headers, Body] ->
+            case is_plain_text(Headers) of
+                yes ->
+                    ?l2b([Headers, <<"\r\n\r\n">>,
+                          string:trim(Body, trailing),
+                          Footer, <<"\r\n">>]);
+                no ->
+                    Mail
+            end;
+        [_] ->
             Mail
     end.
 
