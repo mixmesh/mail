@@ -5,4 +5,4 @@ fmpeg \
   -ss 00:00:03 -to 00:00:06 \
   opengl-rotating-triangle-palettegen.gif
 
-swaks --from p2@obscrete.net --to p8@obscrete.net --server 127.0.0.1:16058 --auth LOGIN --auth-user p42 --auth-password baz --body "FOO\r\n"^C
+swaks --from p2@mixmesh.net --to p8@mixmesh.net --server 127.0.0.1:16058 --auth LOGIN --auth-user p42 --auth-password baz --body "FOO\r\n"^C

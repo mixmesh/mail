@@ -21,8 +21,8 @@ and ./player/src/pop3_serv.erl.
 
 `make runtest` runs all tests, i.e.
 
-`$ ../obscrete/bin/run_test --config ../obscrete/etc/obscrete-do-nothing.conf test/`
+`$ ../mixmesh/bin/run_test --config ../mixmesh/etc/mixmesh-do-nothing.conf test/`
 
 Tests can be run individually as well:
 
-`$ ../obscrete/bin/run_test --config ../obscrete/etc/obscrete-do-nothing.conf maildrop_serv`
+`$ ../mixmesh/bin/run_test --config ../mixmesh/etc/mixmesh-do-nothing.conf maildrop_serv`

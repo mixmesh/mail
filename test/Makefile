@@ -18,4 +18,4 @@ clean:
 #@END-TEST-DEFAULT-RULES@
 
 runtest: all
-	../../obscrete/bin/run_test --config ../../obscrete/etc/obscrete-do-nothing.conf .
+	../../mixmesh/bin/run_test --config ../../mixmesh/etc/mixmesh-do-nothing.conf .
