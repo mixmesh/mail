@@ -1,0 +1,6 @@
+OpenSSL DEFINITIONS ::= BEGIN
+	DssSignature ::= SEQUENCE {
+		r INTEGER,
+		s INTEGER
+	}
+END
