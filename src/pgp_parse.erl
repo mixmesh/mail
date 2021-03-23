@@ -196,6 +196,8 @@ encode_packet(Tag, Body) ->
 %% Decode packets
 %%
 
+decode_packets(<<>>, _Context) ->
+    ok;
 %% Section 4.2.1: Old Format Packet Lengths
 decode_packets(<<?OLD_PACKET_FORMAT:2, Tag:4, LengthType:2, Packets/binary>>,
                Context) ->
