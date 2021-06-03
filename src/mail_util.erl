@@ -7,7 +7,9 @@
 
 -include_lib("apptools/include/shorthand.hrl").
 
+%%
 %% Exported: get_arg
+%%
 
 -type type() :: none | integer | fun().
 -spec get_arg(binary(), [string:grapheme_cluster()], type(), [binary()]) ->
@@ -51,14 +53,18 @@ get_arg(Keyword, Separator, Type, [Arg|Rest]) ->
             {error, syntax_error}
     end.
 
+%%
 %% Exported: strip_path
+%%
 
 -spec strip_path(binary()) -> string().
 
 strip_path(Path) ->
     string:strip(string:strip(?b2l(Path), left, $<), right, $>).
 
+%%
 %% Exported: mktemp
+%%
 
 -spec mktemp(binary()) -> binary().
 
@@ -70,7 +76,9 @@ mktemp(Dir) ->
 mktemp() ->
     ?i2b(erlang:unique_integer([positive])).
 
+%%
 %% Exported: inject_headers
+%%
 
 inject_headers(Mail, []) ->
     Mail;
@@ -87,7 +95,9 @@ inject_headers(Mail, NewHeaders) ->
             Mail
     end.
 
+%%
 %% Exported: inject_footer
+%%
 
 inject_footer(Mail, Footer) ->
     case binary:split(Mail, <<"\r\n\r\n">>) of

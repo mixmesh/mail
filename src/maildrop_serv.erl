@@ -28,7 +28,9 @@
          message_number = 0 :: message_number(),
          next_message_number = 1 :: message_number()}).
 
+%%
 %% Exported: start_link
+%%
 
 -spec start_link(binary(), boolean()) -> serv:spawn_server_result().
 
@@ -40,49 +42,63 @@ start_link(Dir, false) ->
                        fun ?MODULE:message_handler/1,
                        #serv_options{name = ?MODULE}).
 
+%%
 %% Exported: stop
+%%
 
 -spec stop(pid()) -> ok.
 
 stop(Pid) ->
     serv:cast(Pid, stop).
 
+%%
 %% Exported: lock
+%%
 
 -spec lock(pid()) -> ok | {error, already_lock_owner | lock_already_taken}.
 
 lock(Pid) ->
     serv:call(Pid, lock).
 
+%%
 %% Exported: unlock
+%%
 
 -spec unlock(pid()) -> ok | {error, not_locked | not_lock_owner}.
 
 unlock(Pid) ->
   serv:call(Pid, unlock).
 
+%%
 %% Exported: read
+%%
 
 -spec read(pid(), message_number()) -> {ok, #mail{}} | {error, no_such_mail}.
 
 read(Pid, MessageNumber) ->
     serv:call(Pid, {read, MessageNumber}).
 
+%%
 %% Exported: list
+%%
 
 -spec list(pid()) -> [#mail{}].
 
 list(Pid) ->
     serv:call(Pid, list).
 
+%%
 %% Exported: write
+%%
 
 -spec write(pid(), binary()) -> {ok, #mail{}} | {error, inet:posix()}.
 
 write(Pid, SourceFilename) ->
     serv:call(Pid, {write, SourceFilename}).
 
+%%
 %% Exported: delete
+%%
 
 -spec delete(pid(), message_number()) ->
                     ok | {error, no_such_mail | already_deleted}.
@@ -90,28 +106,36 @@ write(Pid, SourceFilename) ->
 delete(Pid, MessageNumber) ->
     serv:call(Pid, {delete, MessageNumber}).
 
+%%
 %% Exported: undelete
+%%
 
 -spec undelete(pid()) -> ok.
 
 undelete(Pid) ->
     serv:call(Pid, undelete).
 
+%%
 %% Exported: remove
+%%
 
 -spec remove(pid()) -> ok.
 
 remove(Pid)  ->
     serv:call(Pid, remove).
 
+%%
 %% Exported: foldl
+%%
 
 -spec foldl(pid(), fun(), any()) -> any().
 
 foldl(Pid, Do, Acc) ->
     serv:call(Pid, {foldl, Do, Acc}).
 
+%%
 %% Exported: strerror
+%%
 
 -spec strerror(any()) -> binary().
 

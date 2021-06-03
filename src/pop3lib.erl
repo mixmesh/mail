@@ -18,7 +18,9 @@
          listen_socket :: ssl:sslsocket(),
          acceptors :: [pid()]}).
 
+%%
 %% Exported: start_link
+%%
 
 -spec start_link(
         inet:socket_address(), inet:port_number(), #pop3lib_options{}) ->
@@ -29,7 +31,9 @@ start_link(IpAddress, Port, Options) ->
        fun(Parent) -> init(Parent, IpAddress, Port, Options) end,
        fun ?MODULE:initial_message_handler/1).
 
+%%
 %% Exported: stop
+%%
 
 -spec stop(pid()) -> ok | {error, timeout}.
 
