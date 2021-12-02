@@ -38,9 +38,9 @@ start_link(Dir, true) ->
     ?spawn_server(fun(Parent) -> init(Parent, Dir) end,
                   fun ?MODULE:message_handler/1);
 start_link(Dir, false) ->
-    ?spawn_server_opts(fun(Parent) -> init(Parent, Dir) end,
-                       fun ?MODULE:message_handler/1,
-                       #serv_options{name = ?MODULE}).
+    ?spawn_server(fun(Parent) -> init(Parent, Dir) end,
+                  fun ?MODULE:message_handler/1,
+                  #serv_options{name = ?MODULE}).
 
 %%
 %% Exported: stop
